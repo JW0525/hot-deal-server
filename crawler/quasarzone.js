@@ -51,7 +51,11 @@ async function crawlQuasarzone() {
     const afterTitle = rowText.split($titleLink.text().trim())[1] || "";
 
     const catMatch = afterTitle.match(/^\s*([가-힣A-Za-z/]+)\s*가격/);
-    const category = normalizeCategory(catMatch ? catMatch[1] : "");
+    const rawCategory = catMatch ? catMatch[1] : "";
+    // 공지/필독/안내 같은 운영글은 핫딜이 아니므로 건너뜀
+    if (/공지|필독|안내/.test(rawCategory) || /^\[?(공지|필독|안내)\]?/.test(title)) return;
+
+    const category = normalizeCategory(rawCategory);
 
     let price = null;
     let priceCurrency = "KRW";

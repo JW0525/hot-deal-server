@@ -118,9 +118,13 @@ async function verifyThumbnail(url, timeout = 3500) {
     return false;
   }
   const referer = findRefererFor(hostname);
+  // 화이트리스트에 없는 도메인은 실제 이미지 자체는 열려도, 브라우저가 보게 되는
+  // /api/thumb 프록시는 화이트리스트에 없으면 무조건 플레이스홀더(카트 아이콘)를 내려준다.
+  // 그러니 여기서도 미리 실패로 처리해서 카드가 목록 상단에 남지 않게 한다.
+  if (!referer) return false;
   const headers = {
     "User-Agent": DEFAULT_HEADERS["User-Agent"],
-    ...(referer ? { Referer: referer } : {}),
+    Referer: referer,
   };
 
   try {
@@ -172,7 +176,6 @@ const CATEGORY_RULES = [
   { match: /식품|음식|건강/i, label: "식품" },
   { match: /패션|의류|잡화|화장품|뷰티/i, label: "패션/뷰티" },
   { match: /게임|SW|소프트웨어|VR|취미/i, label: "게임/취미" },
-  { match: /상품권|쿠폰|포인트|래플|이벤트/i, label: "이벤트/포인트" },
   { match: /여행|도서|공동구매|해외구매|육아|레저/i, label: "여행/기타" },
 ];
 

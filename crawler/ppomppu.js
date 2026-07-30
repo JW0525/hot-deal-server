@@ -58,8 +58,12 @@ async function crawlPpomppu() {
     const meta = rowText.replace(title, " ").trim();
     const m = meta.match(META_REGEX);
 
+    const rawCategory = m ? m[2] : "";
+    // 공지/필독/안내 같은 운영글은 핫딜이 아니므로 건너뜀 (정규화 전 원본 카테고리로 판단)
+    if (/공지|필독|안내/.test(rawCategory) || /^\[?(공지|필독|안내)\]?/.test(title)) continue;
+
     const commentCount = m && m[1] ? parseInt(m[1], 10) : 0;
-    const category = normalizeCategory(m ? m[2] : "");
+    const category = normalizeCategory(rawCategory);
     const author = m ? m[3] : "";
     const postedLabel = m ? m[4] : "";
     const recommend = m && m[5] ? parseInt(m[5], 10) : 0;

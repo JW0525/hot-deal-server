@@ -52,9 +52,11 @@ async function crawlClien() {
       $titleLink.find(".subject_fixed").text().trim() || $titleLink.text().trim();
     if (!title) return;
 
-    const category = normalizeCategory(
-      $item.find('a[href*="jirum?category="]').first().text().trim()
-    );
+    const rawCategory = $item.find('a[href*="jirum?category="]').first().text().trim();
+    // 공지/필독/안내 같은 운영글은 핫딜이 아니므로 건너뜀
+    if (/공지|필독|안내/.test(rawCategory) || /^\[?(공지|필독|안내)\]?/.test(title)) return;
+
+    const category = normalizeCategory(rawCategory);
 
     const author =
       $item.find(".nickname, .list_author").first().text().trim() || "";

@@ -30,6 +30,9 @@ async function crawlEomisae() {
     const title = $el.text().trim();
     if (!title || title === "Read More") return;
     if (/게시판 이용|상품권 이벤트|이용\s*규정/.test(title)) return;
+    // 공지/필독/안내 같은 운영글은 핫딜이 아니므로 건너뜀 (제목만 다듬는 게 아니라 아예 제외).
+    // "인기글"은 딜 자체는 진짜니까 건너뛰지 않고 제목 표시할 때만 제거한다.
+    if (/^\[?(공지|필독|안내)\]?/.test(title)) return;
 
     let url;
     try {

@@ -76,6 +76,11 @@
   .cat-pill:hover { filter: brightness(0.96); }
   .cat-pill.active { background: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(255,90,60,0.3); }
 
+  .cat-more {
+    display: none; flex-shrink: 0; border: none; background: var(--tan); color: var(--tan-text);
+    font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 999px; cursor: pointer; font-family: inherit;
+  }
+
   .search-box {
     flex: 1 1 220px; min-width: 180px; max-width: 340px; display: flex; align-items: center;
     background: var(--tan); border-radius: 999px; padding: 9px 16px; transition: box-shadow 0.2s;
@@ -145,9 +150,11 @@
   }
 
   select#sortSelect {
-    margin-left: auto; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
-    background: var(--card-bg); font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer;
+    margin-left: auto; padding: 8px 34px 8px 14px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--card-bg) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>') no-repeat right 14px center;
+    font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer;
     box-shadow: var(--shadow-sm);
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
   }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
@@ -207,6 +214,15 @@
     .hero-title { font-size: 24px; }
     .hero-panel { flex-basis: 100%; height: 120px; }
     select#sortSelect { margin-left: 0; width: 100%; order: 99; }
+
+    /* 모바일에서는 카테고리가 가로로 잘려 보이니, 기본은 한 줄만 보여주고
+       "더보기"를 눌러야 전체 카테고리가 줄바꿈되어 펼쳐지게 한다. */
+    .cat-nav {
+      order: 100; flex-basis: 100%; flex-wrap: wrap; overflow: hidden;
+      max-height: 40px; transition: max-height 0.2s ease;
+    }
+    .cat-nav.expanded { max-height: 400px; }
+    .cat-more { display: block; order: 101; flex-basis: 100%; margin-top: -4px; }
   }
 </style>
 </head>
@@ -216,11 +232,11 @@
   <div class="header-inner">
     <button class="logo" id="logoBtn" title="처음으로">핫딜헌터</button>
     <nav class="cat-nav" id="categoryFilter"></nav>
+    <button class="cat-more" id="catMoreBtn" type="button">더보기 ⌄</button>
     <div class="search-box">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="searchInput" type="text" placeholder="상품명, 쇼핑몰 검색 후 엔터">
+      <input id="searchInput" type="text" placeholder="상품명 검색 후 엔터">
     </div>
-    <button class="rank-link" id="popularBtn">인기랭킹</button>
     <button class="search-btn" id="searchBtn">🔍 검색</button>
   </div>
 </header>
@@ -250,10 +266,8 @@
     <div class="filter-group" id="sourceFilter"></div>
     <select id="sortSelect">
       <option value="popular">인기순(추천)</option>
-      <option value="latest">최신 수집순</option>
       <option value="priceAsc">가격 낮은순</option>
       <option value="priceDesc">가격 높은순</option>
-      <option value="comments">댓글 많은순</option>
     </select>
   </div>
 
@@ -311,7 +325,7 @@ function buildFilters() {
   const sources = ["전체", ...new Set(ALL_DEALS.map((d) => d.source))];
   // 카테고리 노출 순서를 고정한다. "이벤트/포인트"는 "기타" 바로 앞에 오도록,
   // 목록에 없는(알 수 없는) 카테고리는 이벤트/포인트와 같은 자리(기타 바로 앞)에 둔다.
-  const CATEGORY_ORDER = ["전자기기", "가전/생활", "식품", "패션/뷰티", "게임/취미", "여행/기타", "이벤트/포인트", "기타"];
+  const CATEGORY_ORDER = ["전자기기", "가전/생활", "식품", "패션/뷰티", "게임/취미", "여행/기타", "기타"];
   const categoryRank = (c) => {
     const idx = CATEGORY_ORDER.indexOf(c);
     return idx === -1 ? CATEGORY_ORDER.length - 1 : idx;
@@ -425,11 +439,11 @@ document.getElementById("searchInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") runSearch();
 });
 
-document.getElementById("popularBtn").addEventListener("click", () => {
-  state.sort = "popular";
-  document.getElementById("sortSelect").value = "popular";
-  render();
-  document.getElementById("dealsSection").scrollIntoView({ behavior: "smooth" });
+// 모바일에서는 카테고리가 한 줄만 보이다가, "더보기"를 누르면 전체가 줄바꿈되어 펼쳐진다.
+document.getElementById("catMoreBtn").addEventListener("click", () => {
+  const nav = document.getElementById("categoryFilter");
+  const expanded = nav.classList.toggle("expanded");
+  document.getElementById("catMoreBtn").textContent = expanded ? "접기 ⌃" : "더보기 ⌄";
 });
 
 // 핫딜헌터 로고를 누르면 모든 필터/검색/정렬을 초기화하고 처음 화면으로 돌아간다.
@@ -437,6 +451,8 @@ document.getElementById("logoBtn").addEventListener("click", () => {
   state = { source: "전체", category: "전체", sort: "popular", query: "" };
   document.getElementById("searchInput").value = "";
   document.getElementById("sortSelect").value = "popular";
+  document.getElementById("categoryFilter").classList.remove("expanded");
+  document.getElementById("catMoreBtn").textContent = "더보기 ⌄";
   buildFilters();
   render();
   window.scrollTo({ top: 0, behavior: "smooth" });
