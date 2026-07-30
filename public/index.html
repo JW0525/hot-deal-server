@@ -124,11 +124,23 @@
   .hero-panel {
     flex: 0 0 280px; height: 180px; border: 2px dashed rgba(28,26,21,0.18); border-radius: 20px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-    background: rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.18); text-decoration: none; transition: transform 0.15s;
   }
   .hero-panel-icon { font-size: 34px; }
   .hero-panel-stat { font-size: 22px; font-weight: 800; color: #1c1a15; }
   .hero-panel-label { font-size: 12.5px; font-weight: 600; color: var(--gold-text); text-align: center; }
+
+  /* 쿠팡 상품이 등록되면 hero-panel이 통계 대신 실제 상품 미리보기 카드로 바뀐다 */
+  .hero-panel.hero-panel-ad {
+    cursor: pointer; border: none; border-radius: 24px; background: linear-gradient(180deg, #fdf6e8, #f6ead0);
+    padding: 18px 20px; height: auto; min-height: 180px; gap: 8px;
+    box-shadow: 0 10px 26px rgba(28,26,21,0.1);
+  }
+  .hero-panel.hero-panel-ad:hover { transform: translateY(-2px); }
+  .hero-panel-ad-logo { width: 150px; height: auto; object-fit: contain; }
+  .hero-panel-ad-title { font-size: 14.5px; font-weight: 800; color: #1c1a15; text-align: center; line-height: 1.3; }
+
+  .ad-disclosure { font-size: 9px; color: var(--text-faint); text-align: center; opacity: 0.85; }
 
   /* ---------- section ---------- */
   main { max-width: 1240px; margin: 0 auto; padding: 36px 24px 24px; }
@@ -184,6 +196,10 @@
   .src-클리앙 { background: var(--클리앙); }
   .src-어미새 { background: var(--어미새); }
   .src-루리웹 { background: var(--루리웹); }
+  .badge-ad { background: #1c1a15; }
+
+  .card.ad-card { border-color: #1c1a15; }
+  .card .ad-note { font-size: 10px; color: var(--text-faint); opacity: 0.85; }
 
   .category-tag { font-size: 11px; font-weight: 600; color: var(--text-faint); }
   .title {
@@ -213,6 +229,7 @@
     .hero { padding: 28px 24px; }
     .hero-title { font-size: 24px; }
     .hero-panel { flex-basis: 100%; height: 120px; }
+    .hero-panel.hero-panel-ad { height: auto; min-height: 160px; }
     select#sortSelect { margin-left: 0; width: 100%; order: 99; }
 
     /* 모바일에서는 카테고리가 가로로 잘려 보이니, 기본은 한 줄만 보여주고
@@ -246,13 +263,13 @@
     <div class="hero-text">
       <div class="hero-eyebrow">HOT DEAL HUNTER</div>
       <h1 class="hero-title">후회 없는 핫딜만 모았다</h1>
-      <button class="hero-cta" id="heroCta">오늘의 핫딜 보러가기</button>
+      <button class="hero-cta" id="heroCta">오늘의 쿠팡핫딜 보러가기</button>
     </div>
-    <div class="hero-panel">
-      <div class="hero-panel-icon">🎯</div>
+    <a class="hero-panel" id="heroPanel" href="#">
+      <div class="hero-panel-icon" id="heroPanelIcon">🎯</div>
       <div class="hero-panel-stat" id="heroCount">-</div>
-      <div class="hero-panel-label">5개 사이트 실시간 수집중</div>
-    </div>
+      <div class="hero-panel-label" id="heroPanelLabel">5개 사이트 실시간 수집중</div>
+    </a>
   </div>
 </div>
 
@@ -285,6 +302,15 @@
 <script>
 const SOURCE_COLORS = { "뽐뿌": "🐷", "퀘이사존": "🌌", "클리앙": "🌿", "어미새": "🐦", "루리웹": "🎮" };
 
+// 쿠팡파트너스 광고 링크 설정.
+// 쿠팡파트너스(https://partners.coupang.com)에서 발급받은 딥링크를 아래 배열에 채워 넣으면
+// 히어로 영역과 목록 사이사이에 자동으로 노출된다. title/image는 선택사항(없으면 기본값 표시).
+const COUPANG_PICKS = [
+  { title: "쿠팡이 고른 오늘의 특가", url: "https://link.coupang.com/a/fODRbnudcO" },
+];
+const AD_INTERVAL = 8; // 실제 딜 몇 개마다 쿠팡 카드를 하나씩 끼워넣을지
+const COUPANG_LOGO = "https://image7.coupangcdn.com/image/coupang/common/logo_coupang_w350.png";
+
 let ALL_DEALS = [];
 let state = { source: "전체", category: "전체", sort: "popular", query: "" };
 
@@ -306,7 +332,10 @@ async function loadDeals() {
     const res = await fetch("/api/deals");
     const data = await res.json();
     ALL_DEALS = data.deals || [];
-    document.getElementById("heroCount").textContent = ALL_DEALS.length.toLocaleString("ko-KR");
+    // 쿠팡 상품이 등록돼 있으면 hero-panel은 이미 상품 미리보기로 채워져 있어서 건드리지 않는다.
+    if (COUPANG_PICKS.length === 0) {
+      document.getElementById("heroCount").textContent = ALL_DEALS.length.toLocaleString("ko-KR");
+    }
     buildFilters();
     render();
   } catch (err) {
@@ -395,7 +424,7 @@ function render() {
   }
   empty.style.display = "none";
 
-  grid.innerHTML = list.map((d) => {
+  const cardHtmls = list.map((d) => {
     const price = formatPrice(d);
     return `
     <div class="card">
@@ -421,7 +450,41 @@ function render() {
       </a>
     </div>
   `;
-  }).join("");
+  });
+
+  // 쿠팡 링크가 등록돼 있으면, 실제 딜 카드 사이사이(AD_INTERVAL개마다)에 광고 카드를 끼워넣는다.
+  if (COUPANG_PICKS.length > 0) {
+    const withAds = [];
+    cardHtmls.forEach((html, i) => {
+      withAds.push(html);
+      if ((i + 1) % AD_INTERVAL === 0) {
+        const pick = COUPANG_PICKS[Math.floor(i / AD_INTERVAL) % COUPANG_PICKS.length];
+        withAds.push(renderAdCard(pick));
+      }
+    });
+    grid.innerHTML = withAds.join("");
+  } else {
+    grid.innerHTML = cardHtmls.join("");
+  }
+}
+
+function renderAdCard(pick) {
+  return `
+    <div class="card ad-card">
+      <a class="card-link" href="${pick.url}" target="_blank" rel="noopener noreferrer sponsored">
+        <div class="thumb">
+          ${pick.image ? `<img src="${pick.image}" loading="lazy" onerror="this.outerHTML='🛍️'">` : "🛍️"}
+        </div>
+        <div class="body-text">
+          <div class="badge-row">
+            <span class="badge-source badge-ad">쿠팡</span>
+          </div>
+          <div class="title">${pick.title || "쿠팡이 고른 오늘의 특가"}</div>
+          <div class="ad-note">이 카드는 광고이며, 쿠팡파트너스 활동으로 수수료를 제공받습니다.</div>
+        </div>
+      </a>
+    </div>
+  `;
 }
 
 document.getElementById("sortSelect").addEventListener("change", (e) => {
@@ -458,13 +521,39 @@ document.getElementById("logoBtn").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
-// "오늘의 핫딜 보러가기"를 누르면 인기순으로 정렬된 추천 딜 목록으로 이동한다.
+// "오늘의 쿠팡핫딜 보러가기": 쿠팡 링크가 등록돼 있으면 쿠팡으로 새 탭 이동,
+// 아직 링크를 안 넣었으면 예전처럼 인기순 딜 목록으로 이동한다.
 document.getElementById("heroCta").addEventListener("click", () => {
+  if (COUPANG_PICKS.length > 0) {
+    window.open(COUPANG_PICKS[0].url, "_blank", "noopener,noreferrer");
+    return;
+  }
   state.sort = "popular";
   document.getElementById("sortSelect").value = "popular";
   render();
   document.getElementById("dealsSection").scrollIntoView({ behavior: "smooth" });
 });
+
+// 쿠팡 상품이 등록돼 있으면 hero-panel(오른쪽 박스) 자체를 통계 대신
+// 실제 쿠팡 상품 미리보기(썸네일+제목+CTA)로 바꿔서 보여준다.
+function initHeroPanel() {
+  const panel = document.getElementById("heroPanel");
+  if (COUPANG_PICKS.length === 0) {
+    panel.addEventListener("click", (e) => e.preventDefault());
+    return;
+  }
+  const pick = COUPANG_PICKS[0];
+  panel.href = pick.url;
+  panel.target = "_blank";
+  panel.rel = "noopener noreferrer sponsored";
+  panel.classList.add("hero-panel-ad");
+  panel.innerHTML = `
+    <img class="hero-panel-ad-logo" src="${COUPANG_LOGO}" alt="Coupang">
+    <div class="hero-panel-ad-title">${pick.title || "쿠팡이 고른 오늘의 특가"}</div>
+    <div class="ad-disclosure">쿠팡파트너스 활동으로 일정액의 수수료를 제공받습니다.</div>
+  `;
+}
+initHeroPanel();
 
 loadDeals();
 </script>
