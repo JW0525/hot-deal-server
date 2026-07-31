@@ -73,7 +73,9 @@ async function crawlRuliweb() {
       category,
       author,
       url,
-      commentCount: 0,
+      // 댓글수는 제목 옆에 "(16)" 형태로 붙는다. 댓글이 없으면 요소 자체가 없다.
+      commentCount:
+        parseInt($tr.find(".num_reply").first().text().replace(/[^\d]/g, ""), 10) || 0,
       recommend,
       viewCount,
       postedLabel,

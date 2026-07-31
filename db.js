@@ -77,7 +77,14 @@ function computeHotScores(deals) {
       const cm = squash(deal.commentCount, cmRef);
 
       // 추천을 더 믿되, 추천수를 잘 안 주는 사이트도 있어서 댓글도 섞는다.
-      let score = rec * 0.65 + cm * 0.35;
+      //
+      // 단, 어떤 사이트는 둘 중 한쪽이 통째로 안 들어올 수 있다(크롤링 실패나 사이트 개편).
+      // 그때 배점을 그냥 두면 그 사이트 전체 점수 상한이 눌려서 목록에서 통째로 밀려난다.
+      // 그래서 있는 신호에만 배점을 몰아준다.
+      const wRec = recRef > 0 ? 0.65 : 0;
+      const wCm = cmRef > 0 ? 0.35 : 0;
+      const total = wRec + wCm;
+      let score = total > 0 ? (rec * wRec + cm * wCm) / total : 0;
 
       // 신선도: 핫딜은 시간이 지나면 가치가 떨어진다.
       // 처음 발견하고 6시간까지는 그대로, 이후 사흘에 걸쳐 서서히 깎는다.

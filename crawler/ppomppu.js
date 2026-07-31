@@ -46,6 +46,10 @@ async function crawlPpomppu() {
         url: absUrl,
         title: text,
         rowText: $row.text().replace(/\s+/g, " ").trim(),
+        cells: $row
+          .find("td")
+          .map((__, td) => $(td).text().replace(/\s+/g, " ").trim())
+          .get(),
         thumbnail,
       });
     }
@@ -54,7 +58,7 @@ async function crawlPpomppu() {
   const deals = [];
   const now = new Date().toISOString();
 
-  for (const { url, title, rowText, thumbnail } of rows.values()) {
+  for (const { url, title, rowText, cells, thumbnail } of rows.values()) {
     const meta = rowText.replace(title, " ").trim();
     const m = meta.match(META_REGEX);
 
@@ -66,7 +70,15 @@ async function crawlPpomppu() {
     const category = normalizeCategory(rawCategory);
     const author = m ? m[3] : "";
     const postedLabel = m ? m[4] : "";
-    const recommend = m && m[5] ? parseInt(m[5], 10) : 0;
+    // 추천수는 "4 - 0"(추천-비추천) 형태의 칸에 들어있고, 0이면 칸이 아예 빈다.
+    // rowText를 통째로 정규식에 넣으면 제목/글번호와 섞여 자꾸 놓쳐서 칸에서 직접 읽는다.
+    const recCell = (cells || []).find((c) => /^-?\d+\s*-\s*-?\d+$/.test(c));
+    const recMatch = recCell ? recCell.match(/^(-?\d+)\s*-\s*(-?\d+)$/) : null;
+    const recommend = recMatch
+      ? parseInt(recMatch[1], 10) || 0
+      : m && m[5]
+        ? parseInt(m[5], 10)
+        : 0;
     const viewCount = m && m[7] ? parseInt(m[7], 10) : 0;
 
     const idMatch = url.match(/no=(\d+)/);

@@ -103,7 +103,10 @@ async function crawlQuasarzone() {
       category,
       author,
       url,
-      commentCount: 0, // 댓글수는 제목 끝 숫자와 헷갈리기 쉬워 프로토타입에서는 생략
+      // 댓글수는 제목 옆 .ctn-count 요소에만 들어있다. 본문 텍스트에서 정규식으로 찾으면
+      // 제목 끝 숫자와 헷갈리므로 반드시 이 요소에서만 읽을 것.
+      commentCount:
+        parseInt($tr.find(".ctn-count").first().text().replace(/[^\d]/g, ""), 10) || 0,
       recommend,
       viewCount,
       postedLabel,
