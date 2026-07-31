@@ -71,6 +71,10 @@ async function crawlClien() {
     const viewText = $item.find(".list_hit, .hit").first().text().trim();
     const viewCount = parseCompactNumber(viewText);
 
+    // 공감수는 목록 맨 왼쪽 .list_symph 칸에 들어있다.
+    // 공지글은 여기에 "공지"라는 글자가 들어와서 숫자 변환에 실패하고 0이 된다.
+    const recommend = parseInt($item.find(".list_symph").first().text().trim(), 10) || 0;
+
     const rowText = $item.text().replace(/\s+/g, " ").trim();
     const ended = /품절|종료/.test(title) || /품절|종료/.test(rowText.slice(0, 20));
     const timeMatch = rowText.match(
@@ -89,7 +93,7 @@ async function crawlClien() {
       author,
       url,
       commentCount,
-      recommend: 0, // 클리앙 공감수는 마크업 변경이 잦아 기본값 0 (필요시 아래 주석 참고)
+      recommend,
       viewCount,
       postedLabel,
       thumbnail: resolveUrl(pickImageSrc($item.find("img").first()), BASE_URL),

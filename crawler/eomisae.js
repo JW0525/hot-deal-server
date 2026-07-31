@@ -50,14 +50,31 @@ async function crawlEomisae() {
     }
     const rowText = $container.text().replace(/\s+/g, " ").trim();
 
-    const catDateMatch = rowText.match(/([가-힣A-Za-z]+),\s*(\d{2}\.\d{2}\.\d{2})/);
-    const category = normalizeCategory(catDateMatch ? catDateMatch[1] : "");
-    const postedLabel = catDateMatch ? catDateMatch[2] : "";
+    // 어미새는 목록 상단이 표(tr), 본문이 카드(.card_el) 두 가지 형태로 섞여 나온다.
+    // 예전에는 카드 텍스트 끝의 숫자 세 개를 정규식으로 추측했는데,
+    // 실제로는 뒤에 "Read More"가 붙어서 매칭이 항상 실패했고 추천수가 늘 0이었다.
+    const $card = $el.closest(".card_el");
+    const $row = $card.length ? $card : $el.closest("tr");
 
-    const numsMatch = rowText.match(/(\d+)\s+(\d+)\s+(\d+)\s*$/);
-    const viewCount = numsMatch ? parseInt(numsMatch[1], 10) : 0;
-    const commentCount = numsMatch ? parseInt(numsMatch[2], 10) : 0;
-    const recommend = numsMatch ? parseInt(numsMatch[3], 10) : 0;
+    /** 아이콘(눈/말풍선/하트) 옆에 붙은 숫자를 읽는다. */
+    const iconNum = (iconClass) => {
+      const $icon = $row.find(`.${iconClass}`).first();
+      if (!$icon.length) return 0;
+      return parseInt($icon.parent().text().replace(/[^\d]/g, ""), 10) || 0;
+    };
+
+    const rawCategory = $row.find(".cate").first().text().replace(/,\s*$/, "").trim();
+    const catDateMatch = rowText.match(/([가-힣A-Za-z]+),\s*(\d{2}\.\d{2}\.\d{2})/);
+    const category = normalizeCategory(rawCategory || (catDateMatch ? catDateMatch[1] : ""));
+
+    const dateMatch = $row.text().match(/\d{2}\.\d{2}\.\d{2}/);
+    const postedLabel = dateMatch ? dateMatch[0] : catDateMatch ? catDateMatch[2] : "";
+
+    const recommend = iconNum("ion-ios-heart");
+    const viewCount = iconNum("ion-ios-eye");
+    // 카드형은 말풍선 아이콘, 표 형태는 .tt_cm 칸에 댓글수가 있다.
+    const commentCount =
+      iconNum("ion-ios-chatbubble") || parseInt($row.find(".tt_cm").first().text().trim(), 10) || 0;
 
     const idMatch = url.match(/\/fs\/(\d+)/);
     deals.push({
