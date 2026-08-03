@@ -123,8 +123,16 @@ app.get("/api/thumb", async (req, res) => {
 });
 
 // 수동으로 즉시 크롤링을 돌리고 싶을 때 (배포 후 첫 확인용).
-// 공개 서비스로 운영한다면 이 엔드포인트는 지우거나 관리자 인증을 추가하는 걸 추천합니다.
+//
+// 크롤링은 다섯 사이트를 실제로 때리는 무거운 작업이라, 공개된 주소에 그대로 열어두면
+// 누군가 반복 호출하는 것만으로 무료 서버가 죽고 상대 커뮤니티에도 민폐가 된다.
+// 그래서 CRAWL_TOKEN 환경변수가 있으면 그 값을 아는 요청만 받는다.
+// 로컬에는 이 변수가 없으므로 예전처럼 curl 한 줄로 그냥 돌릴 수 있다.
 app.post("/api/crawl-now", async (req, res) => {
+  const expected = process.env.CRAWL_TOKEN;
+  if (expected && req.get("x-crawl-token") !== expected) {
+    return res.status(401).json({ error: "권한이 없어요" });
+  }
   const result = await runFullCrawl();
   res.json(result);
 });

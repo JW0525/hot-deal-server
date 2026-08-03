@@ -13,14 +13,21 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 주소 | https://hotdealhunter.up.railway.app |
-| 호스팅 | Railway (GitHub 연동 자동 배포) |
+| 배포 주소 | https://hotdeal-server-jw.onrender.com (Render 무료) |
+| 옛 배포 주소 | ~~https://hotdealhunter.up.railway.app~~ — Railway 유료 전환으로 2026-08-04에 내림 |
+| 호스팅 | Render 무료 플랜 (`render.yaml` Blueprint, GitHub 연동 자동 배포) |
 | GitHub | `JW0525/hotdeal-server` |
 | 런타임 | Node.js 20 이상 (**18은 크래시함 — 아래 트러블슈팅 참고**) |
-| 상태 | 배포 완료, 정상 작동. 트래픽은 거의 0 (홍보 시작 전) |
+| 상태 | 코드·설정 준비 완료. **Render 가입과 Blueprint Apply는 사용자가 직접** |
 
-배포 흐름: 로컬에서 코드 수정 → `git push` → Railway가 자동 감지 후 재배포.
+배포 흐름: 로컬에서 코드 수정 → `git push` → Render가 자동 감지 후 재배포.
 별도로 배포 버튼을 누를 필요 없음.
+
+**무료 플랜은 15분 무요청이면 잠든다.** `.github/workflows/keep-alive.yml`이 10분마다 깨운다.
+이 파일을 지우면 크롤링이 멈추고 사용자는 1분짜리 콜드 스타트를 본다. 자세한 건 README 참고.
+
+**무료 서비스를 하나 더 만들지 말 것.** 월 750시간을 워크스페이스가 나눠 쓰는데
+이 서버 하나로 이미 744시간(한 달)을 쓴다. 둘이 되면 한도를 넘겨 **둘 다 멈춘다.**
 
 ---
 
@@ -154,7 +161,7 @@ const AD_INTERVAL = 8;  // 실제 딜 8개마다 광고 카드 1개 삽입
 미니앱은 API 클라이언트 역할만 함.
 
 ```
-[hotdeal-server (Railway)]  ←── API 호출 ──  [토스 미니앱 (신규 프로젝트)]
+[hotdeal-server (Render)]   ←── API 호출 ──  [토스 미니앱 (신규 프로젝트)]
      그대로 유지                                   새로 만들 것
 ```
 
@@ -202,7 +209,7 @@ npm install          # 의존성 설치
 npm start            # 서버 실행 (localhost:3000), 시작 즉시 1회 크롤링 후 매시 정각 반복
 npm run crawl        # 서버 없이 크롤링만 1회 실행
 
-git add . && git commit -m "메시지" && git push   # push하면 Railway 자동 배포
+git add . && git commit -m "메시지" && git push   # push하면 Render 자동 배포
 ```
 
 `node_modules`, `data/`, `package-lock.json`은 배포 시 재생성되므로 커밋 불필요.

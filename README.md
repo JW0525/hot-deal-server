@@ -44,19 +44,43 @@ curl -X POST http://localhost:3000/api/crawl-now
 
 - `GET /api/deals?source=뽐뿌&category=전자기기&q=노트북` — 딜 목록 (쿼리는 전부 선택)
 - `GET /api/health` — 서버/크롤러 상태 확인
-- `POST /api/crawl-now` — 즉시 크롤링 실행 (공개 배포 시에는 삭제하거나 인증 추가 권장)
+- `POST /api/crawl-now` — 즉시 크롤링 실행. `CRAWL_TOKEN` 환경변수가 설정된 곳(=배포 서버)에서는
+  `x-crawl-token` 헤더에 같은 값을 넣어야 합니다. 로컬에는 변수가 없으므로 그냥 호출하면 됩니다.
 
-## Railway에 배포하기
+## Render에 배포하기 (무료)
 
-1. https://railway.app 가입 후 로그인
-2. "New Project" → "Deploy from GitHub repo" (또는 "Empty Project" 후 로컬 폴더를 GitHub에 올려서 연결)
-   - GitHub이 익숙하지 않다면: 이 `hotdeal-server` 폴더를 그대로 새 GitHub 저장소로 push한 뒤 Railway에서 그 저장소를 선택하면 됩니다.
-3. Railway가 `package.json`을 자동으로 인식해서 `npm install` → `npm start`로 빌드/실행합니다. 별도 설정 불필요.
-4. 배포가 끝나면 Settings → Networking에서 "Generate Domain"을 눌러 공개 URL을 받습니다.
-5. 배포 후 `https://내도메인.up.railway.app/api/health`로 접속해서 크롤링이 잘 도는지 확인하세요.
+Railway는 무료 크레딧이 끝나면 요금이 붙어서 Render 무료 플랜으로 옮겼습니다.
+저장소에 `render.yaml`이 들어 있어 설정을 손으로 고를 필요가 없습니다.
 
-무료 크레딧 한도 내에서는 카드 등록 없이 사용 가능합니다. 상시 켜두는 서버라 요금이 궁금하면
-Railway 대시보드의 Usage 탭에서 실시간으로 확인할 수 있습니다.
+1. <https://render.com> 에 **GitHub 계정으로** 가입/로그인
+2. 대시보드에서 **New +** → **Blueprint**
+3. `JW0525/hotdeal-server` 저장소 선택 → **Apply**
+   - `render.yaml`을 읽어 서비스 이름·플랜(Free)·리전(싱가포르)·크롤링 열쇠를 자동으로 채웁니다.
+4. 첫 배포가 끝나면 주소가 나옵니다: `https://hotdeal-server-jw.onrender.com`
+   - 이름이 이미 쓰이고 있으면 Render가 뒤에 문자를 붙입니다. **그때는 실제 주소를 확인해서
+     미니앱의 `src/api.ts`와 `.github/workflows/keep-alive.yml` 두 곳을 같이 고쳐야 합니다.**
+5. `https://<주소>/api/health` 에 접속해 `"total": 130` 같은 숫자가 보이면 정상입니다.
+
+이후에는 `git push`만 하면 Render가 자동으로 다시 배포합니다.
+
+### 무료 플랜의 함정: 15분이면 잠든다
+
+Render 무료 서비스는 **15분간 요청이 없으면 잠들고, 다음 요청 때 깨어나는 데 1분쯤 걸립니다.**
+자는 동안에는 매시 정각 크롤링도 멈춥니다. 그래서 `.github/workflows/keep-alive.yml`이
+10분마다 `/api/health`를 찔러 깨워 둡니다. (공개 저장소라 GitHub Actions는 무료·무제한)
+
+무료 사용량은 워크스페이스당 **월 750시간**입니다. 한 달은 최대 744시간이라
+**이 서버 하나를 24시간 켜두는 건 한도 안에 들어옵니다.** 다만 무료 서비스를 하나 더 만들면
+둘이 합쳐 한도를 넘겨 둘 다 멈추므로, 무료 플랜에서는 서비스를 하나만 유지하세요.
+
+GitHub의 예약 실행은 가끔 십여 분씩 밀립니다. 콜드 스타트가 자주 보이면
+<https://cron-job.org> (무료, 1분 주기까지 가능)에 같은 주소를 등록하는 쪽이 더 정확합니다.
+
+### 데이터는 재시작하면 사라집니다
+
+무료 플랜은 디스크가 임시라 재배포·재시작 때 `data/deals.json`이 지워집니다.
+대신 **서버가 켜지자마자 크롤링을 1회 돌리므로** 8초쯤 뒤에 저절로 복구됩니다.
+그 사이에 들어온 요청은 빈 목록을 받습니다.
 
 ## 크롤러가 데이터를 잘 못 가져올 때
 
