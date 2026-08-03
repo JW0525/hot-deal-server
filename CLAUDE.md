@@ -13,21 +13,36 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 주소 | https://hotdeal-server-jw.onrender.com (Render 무료) |
+| 배포 주소 | https://jw0525.github.io/hotdeal-server/deals.json (GitHub Pages) |
 | 옛 배포 주소 | ~~https://hotdealhunter.up.railway.app~~ — Railway 유료 전환으로 2026-08-04에 내림 |
-| 호스팅 | Render 무료 플랜 (`render.yaml` Blueprint, GitHub 연동 자동 배포) |
-| GitHub | `JW0525/hotdeal-server` |
+| 호스팅 | **상시 서버 없음.** GitHub Actions(수집) + GitHub Pages(게시) |
+| GitHub | `JW0525/hotdeal-server` (공개 저장소여야 Actions가 무료 무제한) |
 | 런타임 | Node.js 20 이상 (**18은 크래시함 — 아래 트러블슈팅 참고**) |
-| 상태 | 코드·설정 준비 완료. **Render 가입과 Blueprint Apply는 사용자가 직접** |
+| 상태 | Pages 게시 확인 완료. **워크플로 파일 push만 남음** (토큰 `workflow` 권한 필요) |
 
-배포 흐름: 로컬에서 코드 수정 → `git push` → Render가 자동 감지 후 재배포.
-별도로 배포 버튼을 누를 필요 없음.
+배포 흐름: 코드 수정 → `git push` → 다음 정시(매시 7분)에 Actions가 수집 → `data` 브랜치에
+force push → Pages가 서빙. **`server.js`는 이제 로컬 개발 전용이다.**
 
-**무료 플랜은 15분 무요청이면 잠든다.** `.github/workflows/keep-alive.yml`이 10분마다 깨운다.
-이 파일을 지우면 크롤링이 멈추고 사용자는 1분짜리 콜드 스타트를 본다. 자세한 건 README 참고.
+### 이 구조에서 절대 건드리면 안 되는 것
 
-**무료 서비스를 하나 더 만들지 말 것.** 월 750시간을 워크스페이스가 나눠 쓰는데
-이 서버 하나로 이미 744시간(한 달)을 쓴다. 둘이 되면 한도를 넘겨 **둘 다 멈춘다.**
+- **`data` 브랜치를 손으로 고치지 말 것.** 매시간 force push로 통째로 덮어쓰므로 사라진다.
+- **저장소를 비공개로 바꾸지 말 것.** Actions 무료 시간이 유한해지고 Pages도 유료 플랜이 필요해진다.
+- **썸네일을 원본 주소로 되돌리지 말 것.** 요청 시점 프록시는 Cloudflare(`Cf-Worker` 헤더 차단)도
+  브라우저 직접 요청(뽐뿌 302·퀘이사존 403)도 전부 막힌다. 실측 근거는 `scripts/site.js` 주석에 있다.
+
+---
+
+## 1-1. 뺀 것
+
+| 뺀 것 | 언제 | 왜 |
+|---|---|---|
+| Railway 배포 | 2026-08-04 | 무료 크레딧이 끝나면 요금이 붙음 |
+| Render 무료 플랜 (`render.yaml`) | 2026-08-04 | 계정당 무료 서비스 1개 제한. 프로젝트를 수십 개 돌릴 계획과 안 맞음 |
+| Render 깨우기 워크플로 | 2026-08-04 | Render를 안 쓰게 되어 함께 제거 |
+| Cloudflare Worker (`worker/`) | 2026-08-04 | 크롤링은 CPU 10ms 한도로 불가. 썸네일 프록시는 `Cf-Worker` 헤더가 어미새·퀘이사존에서 403 |
+| GitHub 릴리스에 썸네일 보관 | 2026-08-04 | 릴리스 자산은 `nosniff` + `octet-stream`이라 `<img>`에서 렌더링 안 됨 |
+
+**되살리자는 얘기가 나오면 이 표부터 읽을 것.**
 
 ---
 
@@ -161,8 +176,8 @@ const AD_INTERVAL = 8;  // 실제 딜 8개마다 광고 카드 1개 삽입
 미니앱은 API 클라이언트 역할만 함.
 
 ```
-[hotdeal-server (Render)]   ←── API 호출 ──  [토스 미니앱 (신규 프로젝트)]
-     그대로 유지                                   새로 만들 것
+[GitHub Pages (deals.json + thumbs/)]  ←── 정적 파일 ──  [토스 미니앱]
+   Actions가 매시간 갱신                          별도 프로젝트
 ```
 
 **미니앱 프로젝트는 이미 만들어져 있음: `/Users/jeongwoo/projects/toss/hotdealhunter`**
@@ -206,10 +221,10 @@ const AD_INTERVAL = 8;  // 실제 딜 8개마다 광고 카드 1개 삽입
 
 ```bash
 npm install          # 의존성 설치
-npm start            # 서버 실행 (localhost:3000), 시작 즉시 1회 크롤링 후 매시 정각 반복
+npm start            # 로컬 서버 (localhost:3000), 시작 즉시 1회 크롤링 후 매시 정각 반복
 npm run crawl        # 서버 없이 크롤링만 1회 실행
 
-git add . && git commit -m "메시지" && git push   # push하면 Render 자동 배포
+git add . && git commit -m "메시지" && git push   # 다음 정시에 Actions가 반영
 ```
 
 `node_modules`, `data/`, `package-lock.json`은 배포 시 재생성되므로 커밋 불필요.

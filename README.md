@@ -7,9 +7,11 @@
 
 ```
 hotdeal-server/
-  server.js        Express 서버 (정적 파일 서빙 + API + 썸네일 프록시)
-  scheduler.js      매시 정각 크롤링 스케줄러 (node-cron)
+  server.js        Express 서버 — **로컬 개발용** (정적 파일 서빙 + API + 썸네일 프록시)
+  scheduler.js      매시 정각 크롤링 스케줄러 (node-cron) — 로컬에서만 씀
   db.js             JSON 파일 기반 저장소 (data/deals.json)
+  scripts/site.js   배포용 폴더 만들기 (딜 목록 + 썸네일 사본) — GitHub Actions가 씀
+  .github/workflows/crawl.yml  1시간마다 수집 → GitHub Pages 게시
   crawler/
     ppomppu.js       뽐뿌 파서
     clien.js         클리앙 파서
@@ -47,40 +49,59 @@ curl -X POST http://localhost:3000/api/crawl-now
 - `POST /api/crawl-now` — 즉시 크롤링 실행. `CRAWL_TOKEN` 환경변수가 설정된 곳(=배포 서버)에서는
   `x-crawl-token` 헤더에 같은 값을 넣어야 합니다. 로컬에는 변수가 없으므로 그냥 호출하면 됩니다.
 
-## Render에 배포하기 (무료)
+## 배포 — 서버가 없습니다 (무료)
 
-Railway는 무료 크레딧이 끝나면 요금이 붙어서 Render 무료 플랜으로 옮겼습니다.
-저장소에 `render.yaml`이 들어 있어 설정을 손으로 고를 필요가 없습니다.
+**상시 켜두는 서버를 쓰지 않습니다.** GitHub Actions가 1시간마다 수집해서 결과를
+GitHub Pages에 올려두고, 미니앱은 그 정적 파일을 받아갑니다.
 
-1. <https://render.com> 에 **GitHub 계정으로** 가입/로그인
-2. 대시보드에서 **New +** → **Blueprint**
-3. `JW0525/hotdeal-server` 저장소 선택 → **Apply**
-   - `render.yaml`을 읽어 서비스 이름·플랜(Free)·리전(싱가포르)·크롤링 열쇠를 자동으로 채웁니다.
-4. 첫 배포가 끝나면 주소가 나옵니다: `https://hotdeal-server-jw.onrender.com`
-   - 이름이 이미 쓰이고 있으면 Render가 뒤에 문자를 붙입니다. **그때는 실제 주소를 확인해서
-     미니앱의 `src/api.ts`와 `.github/workflows/keep-alive.yml` 두 곳을 같이 고쳐야 합니다.**
-5. `https://<주소>/api/health` 에 접속해 `"total": 130` 같은 숫자가 보이면 정상입니다.
+```
+GitHub Actions (매시 7분, 공개 저장소는 무료·무제한)
+  └ 크롤링 → 썸네일까지 내려받아 site/ 폴더 구성
+      └ data 브랜치에 force push
+           └ GitHub Pages 가 그대로 서빙 (CDN·CORS 허용·잠들지 않음)
+                └ https://jw0525.github.io/hotdeal-server/deals.json
+                   https://jw0525.github.io/hotdeal-server/thumbs/*.jpg
+```
 
-이후에는 `git push`만 하면 Render가 자동으로 다시 배포합니다.
+이 저장소의 `server.js`(Express)는 **이제 로컬 개발용입니다.** 크롤러를 고치면서
+바로 확인할 때 씁니다. 배포본은 이 서버를 쓰지 않습니다.
 
-### 무료 플랜의 함정: 15분이면 잠든다
+### 왜 서버를 안 쓰나
 
-Render 무료 서비스는 **15분간 요청이 없으면 잠들고, 다음 요청 때 깨어나는 데 1분쯤 걸립니다.**
-자는 동안에는 매시 정각 크롤링도 멈춥니다. 그래서 `.github/workflows/keep-alive.yml`이
-10분마다 `/api/health`를 찔러 깨워 둡니다. (공개 저장소라 GitHub Actions는 무료·무제한)
+| 시도한 것 | 왜 안 되나 |
+|---|---|
+| Railway | 무료 크레딧이 끝나면 요금이 붙음 |
+| Render 무료 | 계정당 무료 서비스 1개 · 15분이면 잠들어 매시 크롤링도 멈춤 |
+| Cloudflare Worker에서 크롤링 | 무료 플랜은 요청당 CPU 10ms. HTML 파싱은 그 수십 배가 듦 |
+| Cloudflare Worker에서 썸네일 프록시 | **Worker의 외부 요청에는 `Cf-Worker` 헤더가 강제로 붙는데(삭제 불가) 어미새·퀘이사존 CDN이 이걸 403으로 막음** |
+| 브라우저가 이미지 직접 요청 | 뽐뿌(302)·퀘이사존(403)이 외부 도메인 요청을 차단 |
 
-무료 사용량은 워크스페이스당 **월 750시간**입니다. 한 달은 최대 744시간이라
-**이 서버 하나를 24시간 켜두는 건 한도 안에 들어옵니다.** 다만 무료 서비스를 하나 더 만들면
-둘이 합쳐 한도를 넘겨 둘 다 멈추므로, 무료 플랜에서는 서비스를 하나만 유지하세요.
+남은 방법이 **수집할 때 썸네일까지 미리 받아두는 것**이었고, 실측 결과
+GitHub Actions에서 Referer + 브라우저 User-Agent를 붙이면 109/109 전부 성공했습니다(평균 26KB).
 
-GitHub의 예약 실행은 가끔 십여 분씩 밀립니다. 콜드 스타트가 자주 보이면
-<https://cron-job.org> (무료, 1분 주기까지 가능)에 같은 주소를 등록하는 쪽이 더 정확합니다.
+### 처음 한 번만 하는 설정
 
-### 데이터는 재시작하면 사라집니다
+1. 저장소 **Settings → Pages → Source**를 `Deploy from a branch` / 브랜치 `data` / 폴더 `/`로 지정
+   (이미 켜져 있습니다. `gh api repos/OWNER/REPO/pages`로 확인 가능)
+2. 워크플로 파일(`.github/workflows/crawl.yml`)을 올리려면 토큰에 `workflow` 권한이 필요합니다.
+   ```
+   gh auth refresh -s workflow
+   ```
+3. 올린 뒤 저장소 **Actions 탭 → crawl → Run workflow**로 한 번 돌려보세요.
 
-무료 플랜은 디스크가 임시라 재배포·재시작 때 `data/deals.json`이 지워집니다.
-대신 **서버가 켜지자마자 크롤링을 1회 돌리므로** 8초쯤 뒤에 저절로 복구됩니다.
-그 사이에 들어온 요청은 빈 목록을 받습니다.
+### 확인하는 법
+
+```bash
+curl -s https://jw0525.github.io/hotdeal-server/deals.json | head -c 200
+```
+
+`updatedAt`이 1시간 이내면 정상입니다.
+
+### 비용과 한도
+
+전부 무료이고 카드 등록도 필요 없습니다. 공개 저장소라 Actions 사용 시간이 무제한이고,
+Pages는 월 100GB 전송·시간당 10회 빌드까지 허용됩니다(우리는 시간당 1회).
+**프로젝트를 수십 개로 늘려도 저장소마다 따로 적용되므로 서로 한도를 잡아먹지 않습니다.**
 
 ## 크롤러가 데이터를 잘 못 가져올 때
 
