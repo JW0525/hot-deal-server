@@ -91,7 +91,9 @@ function download(rawUrl) {
           const type = res.headers["content-type"] || "";
           if (res.statusCode !== 200 || !type.startsWith("image/")) {
             res.resume();
-            return resolve(null);
+            // 왜 실패했는지 남긴다. 사이트별로 차단 방식이 달라서 이 한 줄이 없으면
+            // "썸네일이 안 나온다"는 현상만 보이고 원인을 못 찾는다.
+            return resolve({ error: `${res.statusCode} ${type || "타입없음"}` });
           }
           const chunks = [];
           let size = 0;
@@ -189,8 +191,13 @@ async function build(siteDir) {
 
     // 한 번에 몰아치면 CDN이 속도 제한을 건다. 이토랜드는 로컬에서 50/50 성공하는데
     // Actions에서 연속으로 받자 31장이 실패했다(2026-08-05). 잠깐 쉬고, 실패하면 한 번 더.
-    const got = (await download(deal.thumbnail)) || (await retryDownload(deal.thumbnail));
-    if (!got) {
+    let got = await download(deal.thumbnail);
+    if (!got || got.error) got = await retryDownload(deal.thumbnail);
+    if (!got || got.error) {
+      // 어떤 사이트가 왜 막히는지 한눈에 보이도록 앞쪽 몇 건만 남긴다(로그 폭주 방지).
+      if (failed < 5) {
+        console.log(`[site] 썸네일 실패: ${deal.source} ${got?.error || "연결 실패"} ${deal.thumbnail.slice(0, 70)}`);
+      }
       // 여기서 비우면 원본 주소가 사라져 다음 회차에 다시 시도할 수 없다.
       // 대신 앱은 썸네일 없는 딜을 목록 맨 뒤로 밀기 때문에 화면이 깨지지는 않는다.
       deal.thumbnail = null;
