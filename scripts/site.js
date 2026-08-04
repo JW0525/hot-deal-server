@@ -120,6 +120,14 @@ function download(rawUrl) {
   });
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// 속도 제한에 걸린 경우라면 잠깐 쉬었다가 다시 받으면 대개 성공한다.
+async function retryDownload(url) {
+  await sleep(1200);
+  return download(url);
+}
+
 function importFromSite(siteDir) {
   const file = path.join(siteDir, "deals.json");
   if (!fs.existsSync(file)) {
@@ -179,8 +187,12 @@ async function build(siteDir) {
       continue;
     }
 
-    const got = await download(deal.thumbnail);
+    // 한 번에 몰아치면 CDN이 속도 제한을 건다. 이토랜드는 로컬에서 50/50 성공하는데
+    // Actions에서 연속으로 받자 31장이 실패했다(2026-08-05). 잠깐 쉬고, 실패하면 한 번 더.
+    const got = (await download(deal.thumbnail)) || (await retryDownload(deal.thumbnail));
     if (!got) {
+      // 여기서 비우면 원본 주소가 사라져 다음 회차에 다시 시도할 수 없다.
+      // 대신 앱은 썸네일 없는 딜을 목록 맨 뒤로 밀기 때문에 화면이 깨지지는 않는다.
       deal.thumbnail = null;
       failed++;
       continue;
@@ -190,6 +202,7 @@ async function build(siteDir) {
     deal.thumbnail = `${THUMB_DIR_NAME}/${name}`;
     keep.add(name);
     fetched++;
+    await sleep(120); // 상대 CDN을 몰아치지 않기 위한 최소 간격
   }
 
   // 목록에서 사라진 딜의 썸네일은 지운다. 안 지우면 폴더가 계속 불어난다.
