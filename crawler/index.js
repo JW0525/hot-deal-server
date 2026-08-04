@@ -1,8 +1,8 @@
 const { crawlPpomppu } = require("./ppomppu");
 const { crawlClien } = require("./clien");
-const { crawlQuasarzone } = require("./quasarzone");
 const { crawlEomisae } = require("./eomisae");
 const { crawlRuliweb } = require("./ruliweb");
+const { crawlDealbada } = require("./dealbada");
 const { upsertDeals } = require("../db");
 const { sleep, verifyThumbnails } = require("./utils");
 
@@ -11,12 +11,16 @@ let lastRunAt = null;
 let lastRunResult = null;
 
 // 크롤링할 사이트 목록. 새 사이트를 추가하려면 여기에 한 줄만 더하면 됩니다.
+//
+// 퀘이사존은 2026-08-05에 뺐다. GitHub Actions IP가 차단돼 403만 반환한다(헤더로는 해결 불가).
+// 파서 파일(quasarzone.js)은 지우지 않았으니, 나중에 VPS로 옮겨서 접속이 되면
+// require와 아래 배열에 한 줄씩 되살리면 된다. 자세한 경위는 CLAUDE.md 참고.
 const SOURCES = [
   { name: "뽐뿌", fn: crawlPpomppu },
   { name: "클리앙", fn: crawlClien },
-  { name: "퀘이사존", fn: crawlQuasarzone },
   { name: "어미새", fn: crawlEomisae },
   { name: "루리웹", fn: crawlRuliweb },
+  { name: "딜바다", fn: crawlDealbada },
 ];
 
 // 사이트를 한 번에 다 때리지 않고 살짝 텀을 둬서 상대 서버 부담을 줄입니다.
