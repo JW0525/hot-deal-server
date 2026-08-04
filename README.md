@@ -61,8 +61,8 @@ GitHub Actions (매시 7분, 공개 저장소는 무료·무제한)
   └ 크롤링 → 썸네일까지 내려받아 site/ 폴더 구성
       └ data 브랜치에 force push
            └ GitHub Pages 가 그대로 서빙 (CDN·CORS 허용·잠들지 않음)
-                └ https://jw0525.github.io/hotdeal-server/deals.json
-                   https://jw0525.github.io/hotdeal-server/thumbs/*.jpg
+                └ https://hot-deal-eoo.pages.dev/deals.json
+                   https://hot-deal-eoo.pages.dev/thumbs/*.jpg
 ```
 
 이 저장소의 `server.js`(Express)는 **이제 로컬 개발용입니다.** 크롤러를 고치면서
@@ -94,7 +94,7 @@ GitHub Actions에서 Referer + 브라우저 User-Agent를 붙이면 109/109 전�
 ### 확인하는 법
 
 ```bash
-curl -s https://jw0525.github.io/hotdeal-server/deals.json | head -c 200
+curl -s https://hot-deal-eoo.pages.dev/deals.json | head -c 200
 ```
 
 `updatedAt`이 1시간 이내면 정상입니다.

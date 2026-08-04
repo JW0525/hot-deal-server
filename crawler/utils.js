@@ -22,7 +22,9 @@ const DEFAULT_HEADERS = {
 };
 
 // 사이트별로 인코딩이 달라서(뽐뿌는 EUC-KR) arraybuffer로 받은 뒤 직접 디코딩합니다.
-async function fetchHtml(url, { encoding = "utf-8", timeout = 10000, headers } = {}) {
+// 기본 20초. 빠삭이 GitHub Actions에서 10초를 넘겨 통째로 0건이 된 적이 있다(2026-08-05).
+// 하루 두 번만 도는 작업이라 넉넉히 기다리는 편이 낫다.
+async function fetchHtml(url, { encoding = "utf-8", timeout = 20000, headers } = {}) {
   const res = await axios.get(url, {
     headers: { ...DEFAULT_HEADERS, ...headers },
     responseType: "arraybuffer",

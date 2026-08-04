@@ -13,7 +13,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 주소 | https://jw0525.github.io/hotdeal-server/deals.json (GitHub Pages) |
+| 배포 주소 | https://hot-deal-eoo.pages.dev/deals.json (GitHub Pages) |
 | 옛 배포 주소 | ~~https://hotdealhunter.up.railway.app~~ — Railway 유료 전환으로 2026-08-04에 내림 |
 | 호스팅 | **상시 서버 없음.** GitHub Actions(수집) + GitHub Pages(게시) |
 | GitHub | `JW0525/hotdeal-server` (공개 저장소여야 Actions가 무료 무제한) |

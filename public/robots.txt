@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://jw0525.github.io/hotdeal-server/sitemap.xml
+Sitemap: https://hot-deal-eoo.pages.dev/sitemap.xml
