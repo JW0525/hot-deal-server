@@ -22,6 +22,11 @@ const THUMB_REFERER_BY_HOST = {
   "quasarzone.com": "https://quasarzone.com/",
   "img.eomisae.co.kr": "https://eomisae.co.kr/",
   "eomisae.co.kr": "https://eomisae.co.kr/",
+  "cdn.dealbada.com": "https://www.dealbada.com/",
+  "dealbada.com": "https://www.dealbada.com/",
+  // 딜바다는 글쓴이가 imgur에 올린 이미지를 그대로 쓰는 경우가 많다.
+  "i.imgur.com": "https://www.dealbada.com/",
+  "imgur.com": "https://www.dealbada.com/",
   "img.ruliweb.com": "https://bbs.ruliweb.com/",
   "i2.ruliweb.com": "https://bbs.ruliweb.com/",
   "ruliweb.com": "https://bbs.ruliweb.com/",

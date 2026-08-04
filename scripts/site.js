@@ -35,6 +35,8 @@ const REFERER_BY_HOST = {
   quasarzone: "https://quasarzone.com/",
   eomisae: "https://eomisae.co.kr/",
   ruliweb: "https://bbs.ruliweb.com/",
+  dealbada: "https://www.dealbada.com/",
+  imgur: "https://www.dealbada.com/", // 딜바다 글쓴이들이 imgur에 올린 이미지
 };
 
 // 퀘이사존은 Referer만으로는 부족하고 브라우저 User-Agent까지 있어야 200을 준다.
