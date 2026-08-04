@@ -24,14 +24,11 @@ const HEADERS = {
 };
 
 const CANDIDATES = [
-  { name: "딜바다", url: "https://www.dealbada.com/bbs/board.php?bo_table=deal_domestic" },
-  { name: "쿨엔조이", url: "https://coolenjoy.net/bbs/jirum" },
-  { name: "알구몬", url: "https://www.algumon.com/" },
-  { name: "zod(조드)", url: "https://zod.kr/deal" },
-  { name: "아카라이브", url: "https://arca.live/b/hotdeal" },
+  { name: "빠삭", url: "https://bbasak.com/bbs/board.php?bo_table=bbasak1" },
+  { name: "이토랜드", url: "https://etoland.co.kr/b/hotdeal/list" },
   { name: "에펨코리아", url: "https://www.fmkorea.com/hotdeal" },
-  { name: "미니기기코리아", url: "https://mini.minigi.co.kr/" },
-  { name: "퀘이사존(대조군)", url: "https://quasarzone.com/bbs/qb_saleinfo" },
+  { name: "아카라이브", url: "https://arca.live/b/hotdeal" },
+  { name: "딜바다(대조군)", url: "https://www.dealbada.com/bbs/board.php?bo_table=deal_domestic" },
 ];
 
 (async () => {
