@@ -86,6 +86,9 @@ function download(rawUrl) {
             Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
           },
           timeout: 15000,
+          // GitHub Actions 러너는 IPv6가 붙어 있는데 상대 CDN의 IPv6 경로가 죽어 있으면
+          // HTTP 응답도 못 받고 "연결 실패"만 난다(이토랜드에서 겪음). IPv4로 고정한다.
+          family: 4,
         },
         (res) => {
           const type = res.headers["content-type"] || "";
