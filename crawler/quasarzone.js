@@ -12,7 +12,12 @@ const TAIL_REGEX = /(\S+)\s+([\d,.]+\s*k?)\s+(\d+분\s*전|\d+시간\s*전|\d{1,
 async function crawlQuasarzone() {
   let html;
   try {
-    html = await fetchHtml(LIST_URL, { encoding: "utf-8" });
+    // 퀘이사존은 다섯 사이트 중 방화벽이 가장 빡빡하다. 사이트 안에서 넘어온 것처럼
+    // Referer를 붙이고, 브라우저가 링크를 눌렀을 때와 같은 Sec-Fetch-Site 값을 준다.
+    html = await fetchHtml(LIST_URL, {
+      encoding: "utf-8",
+      headers: { Referer: BASE_URL + "/", "Sec-Fetch-Site": "same-origin" },
+    });
   } catch (err) {
     console.error("[quasarzone] 목록 요청 실패:", err.message);
     return [];

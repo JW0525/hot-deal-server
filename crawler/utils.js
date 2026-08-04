@@ -1,15 +1,30 @@
 const axios = require("axios");
 const iconv = require("iconv-lite");
 
+// 브라우저가 실제로 보내는 헤더 묶음.
+//
+// 왜 이렇게까지 갖추는가 (2026-08-04):
+// 예전엔 User-Agent 하나만, 그것도 끝에 `hotdeal-moa-prototype`을 붙여 보냈다.
+// 내 PC에서는 통했지만 GitHub Actions에서 돌리자 퀘이사존이 403으로 막았다.
+// 방화벽이 "헤더가 빈약하고 정체불명 문자열이 붙은 요청"을 봇으로 판정하기 때문이다.
+// 요청 자체는 예전과 똑같이 사이트당 1시간에 1번, 사이트 간 1.5초 간격을 지킨다.
 const DEFAULT_HEADERS = {
   "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 hotdeal-moa-prototype",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  Accept:
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+  "Upgrade-Insecure-Requests": "1",
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "none",
+  "Sec-Fetch-User": "?1",
 };
 
 // 사이트별로 인코딩이 달라서(뽐뿌는 EUC-KR) arraybuffer로 받은 뒤 직접 디코딩합니다.
-async function fetchHtml(url, { encoding = "utf-8", timeout = 10000 } = {}) {
+async function fetchHtml(url, { encoding = "utf-8", timeout = 10000, headers } = {}) {
   const res = await axios.get(url, {
-    headers: DEFAULT_HEADERS,
+    headers: { ...DEFAULT_HEADERS, ...headers },
     responseType: "arraybuffer",
     timeout,
   });
