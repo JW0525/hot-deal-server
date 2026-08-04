@@ -37,6 +37,8 @@ const REFERER_BY_HOST = {
   eomisae: "https://eomisae.co.kr/",
   ruliweb: "https://bbs.ruliweb.com/",
   dealbada: "https://www.dealbada.com/",
+  bbasak: "https://bbasak.com/",
+  etoland: "https://etoland.co.kr/",
   imgur: "https://www.dealbada.com/", // 딜바다 글쓴이들이 imgur에 올린 이미지
 };
 

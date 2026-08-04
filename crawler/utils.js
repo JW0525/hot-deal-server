@@ -114,6 +114,9 @@ const THUMB_REFERER_BY_HOST = {
   // 딜바다는 글쓴이가 imgur에 올린 이미지를 그대로 쓰는 경우가 많다.
   "i.imgur.com": "https://www.dealbada.com/",
   "imgur.com": "https://www.dealbada.com/",
+  "bbasak.com": "https://bbasak.com/",
+  "btcdn.etoland.co.kr": "https://etoland.co.kr/",
+  "etoland.co.kr": "https://etoland.co.kr/",
   "img.ruliweb.com": "https://bbs.ruliweb.com/",
   "i2.ruliweb.com": "https://bbs.ruliweb.com/",
   "ruliweb.com": "https://bbs.ruliweb.com/",
@@ -192,8 +195,8 @@ async function verifyThumbnails(deals, concurrency = 6) {
 // 복잡해지지 않도록 공통된 큰 갈래로 정리한다. 새 패턴이 필요하면 여기에 추가.
 const CATEGORY_RULES = [
   // '디지털'은 딜바다가 쓰는 분류명이다. 없으면 노트북·이어폰이 전부 '기타'로 빠진다.
-  { match: /PC|하드웨어|컴퓨터|노트북|모바일|휴대폰|스마트폰|A\/V|디지털/i, label: "전자기기" },
-  { match: /가전|TV|인테리어|생활용품|가구/i, label: "가전/생활" },
+  { match: /PC|하드웨어|컴퓨터|노트북|모바일|휴대폰|스마트폰|A\/V|디지털|전자제품/i, label: "전자기기" },
+  { match: /가전|TV|인테리어|생활|가구/i, label: "가전/생활" },
   { match: /식품|음식|건강/i, label: "식품" },
   { match: /패션|의류|잡화|화장품|뷰티/i, label: "패션/뷰티" },
   { match: /게임|SW|소프트웨어|VR|취미/i, label: "게임/취미" },

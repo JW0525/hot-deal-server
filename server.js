@@ -27,6 +27,9 @@ const THUMB_REFERER_BY_HOST = {
   // 딜바다는 글쓴이가 imgur에 올린 이미지를 그대로 쓰는 경우가 많다.
   "i.imgur.com": "https://www.dealbada.com/",
   "imgur.com": "https://www.dealbada.com/",
+  "bbasak.com": "https://bbasak.com/",
+  "btcdn.etoland.co.kr": "https://etoland.co.kr/",
+  "etoland.co.kr": "https://etoland.co.kr/",
   "img.ruliweb.com": "https://bbs.ruliweb.com/",
   "i2.ruliweb.com": "https://bbs.ruliweb.com/",
   "ruliweb.com": "https://bbs.ruliweb.com/",

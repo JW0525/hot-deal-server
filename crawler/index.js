@@ -3,6 +3,8 @@ const { crawlClien } = require("./clien");
 const { crawlEomisae } = require("./eomisae");
 const { crawlRuliweb } = require("./ruliweb");
 const { crawlDealbada } = require("./dealbada");
+const { crawlBbasak } = require("./bbasak");
+const { crawlEtoland } = require("./etoland");
 const { upsertDeals } = require("../db");
 const { sleep, verifyThumbnails } = require("./utils");
 
@@ -21,6 +23,8 @@ const SOURCES = [
   { name: "어미새", fn: crawlEomisae },
   { name: "루리웹", fn: crawlRuliweb },
   { name: "딜바다", fn: crawlDealbada },
+  { name: "빠삭", fn: crawlBbasak },
+  { name: "이토랜드", fn: crawlEtoland },
 ];
 
 // 사이트를 한 번에 다 때리지 않고 살짝 텀을 둬서 상대 서버 부담을 줄입니다.

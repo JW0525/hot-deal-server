@@ -1,12 +1,12 @@
 {
   "name": "hotdeal-server",
   "version": "1.0.0",
-  "description": "뽐뿌/클리앙/어미새/루리웹/딜바다 핫딜을 1시간마다 수집해서 비교해주는 서버",
+  "description": "뽐뿌/클리앙/어미새/루리웹/딜바다/빠삭/이토랜드 핫딜을 1시간마다 수집해서 비교해주는 서버",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "crawl": "node scripts/probe-sites.js; node -e \"require('./crawler').runFullCrawl().then(()=>process.exit(0))\""
+    "crawl": "node -e \"require('./crawler').runFullCrawl().then(()=>process.exit(0))\""
   },
   "dependencies": {
     "axios": "^1.7.7",
