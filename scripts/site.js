@@ -24,6 +24,7 @@
 const fs = require("fs");
 const path = require("path");
 const https = require("https");
+const http = require("http");
 
 const DATA_FILE = path.join(__dirname, "..", "data", "deals.json");
 const THUMB_DIR_NAME = "thumbs";
@@ -63,44 +64,57 @@ function download(rawUrl) {
     } catch {
       return resolve(null);
     }
-    const req = https.request(
-      target,
-      {
-        method: "GET",
-        headers: {
-          Referer: refererFor(target.hostname),
-          "User-Agent": USER_AGENT,
-          Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+
+    // 딜바다는 이미지 주소를 아직 http로 준다. https 모듈에 http 주소를 넣으면
+    // 그냥 실패하는 게 아니라 예외를 던져서 수집 전체가 죽는다(2026-08-05에 겪음).
+    const client = target.protocol === "http:" ? http : https;
+    if (target.protocol !== "http:" && target.protocol !== "https:") {
+      return resolve(null);
+    }
+
+    // 썸네일 한 장 때문에 수집 전체가 죽지 않도록 통째로 감싼다.
+    try {
+      const req = client.request(
+        target,
+        {
+          method: "GET",
+          headers: {
+            Referer: refererFor(target.hostname),
+            "User-Agent": USER_AGENT,
+            Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+          },
+          timeout: 15000,
         },
-        timeout: 15000,
-      },
-      (res) => {
-        const type = res.headers["content-type"] || "";
-        if (res.statusCode !== 200 || !type.startsWith("image/")) {
-          res.resume();
-          return resolve(null);
-        }
-        const chunks = [];
-        let size = 0;
-        res.on("data", (chunk) => {
-          size += chunk.length;
-          if (size > MAX_BYTES) {
-            req.destroy();
+        (res) => {
+          const type = res.headers["content-type"] || "";
+          if (res.statusCode !== 200 || !type.startsWith("image/")) {
+            res.resume();
             return resolve(null);
           }
-          chunks.push(chunk);
-        });
-        res.on("end", () =>
-          resolve({ buffer: Buffer.concat(chunks), ext: extFor(type) }),
-        );
-      },
-    );
-    req.on("error", () => resolve(null));
-    req.on("timeout", () => {
-      req.destroy();
+          const chunks = [];
+          let size = 0;
+          res.on("data", (chunk) => {
+            size += chunk.length;
+            if (size > MAX_BYTES) {
+              req.destroy();
+              return resolve(null);
+            }
+            chunks.push(chunk);
+          });
+          res.on("end", () =>
+            resolve({ buffer: Buffer.concat(chunks), ext: extFor(type) }),
+          );
+        },
+      );
+      req.on("error", () => resolve(null));
+      req.on("timeout", () => {
+        req.destroy();
+        resolve(null);
+      });
+      req.end();
+    } catch {
       resolve(null);
-    });
-    req.end();
+    }
   });
 }
 
