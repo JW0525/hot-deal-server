@@ -9,8 +9,10 @@ name: crawl
 
 on:
   schedule:
+    # GitHub은 세계 표준시로 돈다. 한국이 9시간 빠르므로
+    #   11:07 UTC = 저녁 8시 7분 / 23:07 UTC = 다음 날 아침 8시 7분
     # 정각은 전 세계 작업이 몰려 밀리기 쉬워서 7분에 돌린다.
-    - cron: "7 * * * *"
+    - cron: "7 11,23 * * *"
   workflow_dispatch: # 저장소 Actions 탭에서 손으로 즉시 실행할 수 있게
 
 # data 브랜치에 push해야 하므로 쓰기 권한이 필요하다.
@@ -54,7 +56,7 @@ jobs:
       - name: 딜 목록 + 썸네일 만들기
         run: node scripts/site.js build site
 
-      - name: GitHub Pages에 올리기
+      - name: 다음 회차용 상태 저장 (data 브랜치)
         run: |
           # 기록을 쌓지 않고 매번 통째로 덮어쓴다. 1시간마다 커밋이 쌓이면
           # 저장소가 계속 불어나는데, 지난 시각의 딜 목록은 쓸 데가 없다.
@@ -65,4 +67,15 @@ jobs:
           git add -A
           git commit -q -m "딜 갱신 $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" data
-          echo "게시 완료: https://jw0525.github.io/hotdeal-server/deals.json"
+          echo "상태 저장 완료 (다음 회차가 이 결과를 이어받는다)"
+
+      # 사람과 미니앱이 실제로 보는 곳. GitHub Pages는 약관상 상업적 이용이 막혀 있어
+      # Cloudflare Pages로 옮겼다. 정적 파일은 트래픽 무제한 무료다.
+      - name: Cloudflare Pages에 게시
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@4 pages deploy site \
+            --project-name hot-deal --branch main --commit-dirty=true
+          echo "게시 완료: https://hot-deal-eoo.pages.dev/deals.json"
