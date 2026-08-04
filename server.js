@@ -89,6 +89,13 @@ app.get("/api/deals", (req, res) => {
   });
 });
 
+// 배포본(GitHub Pages)에는 서버가 없어서 웹 화면이 `deals.json` 정적 파일을 읽습니다.
+// 로컬에서도 같은 주소로 같은 모양을 내려줘야 화면 코드가 두 갈래로 갈리지 않습니다.
+app.get("/deals.json", (req, res) => {
+  const deals = readAll();
+  res.json({ count: deals.length, updatedAt: getStatus().lastRunAt, deals });
+});
+
 // 썸네일 이미지 프록시. 화이트리스트에 있는 호스트만 중계해서 오픈 프록시로 악용되는 걸 막습니다.
 app.get("/api/thumb", async (req, res) => {
   const src = req.query.url;

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>핫딜할인 : 흩어진 핫딜, 한 곳에서</title>
 <meta name="description" content="뽐뿌·퀘이사존·클리앙·어미새·루리웹 핫딜을 한 곳에 모아 검색하고 비교하세요.">
-<link rel="canonical" href="https://hotdealhunter.up.railway.app/">
+<link rel="canonical" href="https://jw0525.github.io/hotdeal-server/">
 <meta name="naver-site-verification" content="30bebd36686c0d4110afe74eec6d1cc2c66adfc9" />
 
 <!-- 파비콘/홈화면 아이콘. 토스 미니앱과 같은 % 로고를 쓴다. -->
@@ -18,15 +18,15 @@
 <meta property="og:site_name" content="핫딜할인">
 <meta property="og:title" content="핫딜할인 : 흩어진 핫딜, 한 곳에서">
 <meta property="og:description" content="뽐뿌·퀘이사존·클리앙·어미새·루리웹 핫딜을 한 곳에 모아 검색하고 비교하세요.">
-<meta property="og:url" content="https://hotdealhunter.up.railway.app/">
-<meta property="og:image" content="https://hotdealhunter.up.railway.app/og-image.png">
+<meta property="og:url" content="https://jw0525.github.io/hotdeal-server/">
+<meta property="og:image" content="https://jw0525.github.io/hotdeal-server/og-image.png">
 <meta property="og:locale" content="ko_KR">
 
 <!-- 트위터(X) 카드 -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="핫딜할인 : 흩어진 핫딜, 한 곳에서">
 <meta name="twitter:description" content="뽐뿌·퀘이사존·클리앙·어미새·루리웹 핫딜을 한 곳에 모아 검색하고 비교하세요.">
-<meta name="twitter:image" content="https://hotdealhunter.up.railway.app/og-image.png">
+<meta name="twitter:image" content="https://jw0525.github.io/hotdeal-server/og-image.png">
 
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
@@ -370,7 +370,9 @@ async function loadDeals() {
   document.getElementById("statsText").textContent = "불러오는 중...";
   if (ALL_DEALS.length === 0) renderSkeleton();
   try {
-    const res = await fetch("/api/deals");
+    // 배포본(GitHub Pages)에는 서버가 없다. 수집 결과 파일을 그대로 읽는다.
+    // 로컬 개발 서버(server.js)도 같은 주소로 같은 모양을 내려주므로 코드가 갈리지 않는다.
+    const res = await fetch("deals.json");
     const data = await res.json();
     ALL_DEALS = data.deals || [];
     // 쿠팡 상품이 등록돼 있으면 hero-panel은 이미 상품 미리보기로 채워져 있어서 건드리지 않는다.
@@ -383,6 +385,13 @@ async function loadDeals() {
     document.getElementById("statsText").textContent = "딜을 불러오지 못했어요. 서버가 켜져 있는지 확인해주세요.";
     console.error(err);
   }
+}
+
+// 썸네일 주소가 두 갈래다. render()와 상세 카드 양쪽에서 쓰므로 최상위에 둔다.
+//  · 배포본: 수집할 때 받아둔 사본이라 `thumbs/xxx.jpg` 상대 경로 → 그대로 쓴다.
+//  · 로컬 개발 서버: 원본 주소라 핫링크 차단을 피하려면 프록시(/api/thumb)를 거쳐야 한다.
+function thumbSrc(raw) {
+  return /^https?:/i.test(raw) ? `/api/thumb?url=${encodeURIComponent(raw)}` : raw;
 }
 
 function formatPrice(deal) {
@@ -473,7 +482,7 @@ function render() {
     <div class="card">
       <a class="card-link" href="${d.url}" target="_blank" rel="noopener noreferrer">
         <div class="thumb">
-          ${d.thumbnail ? `<img src="/api/thumb?url=${encodeURIComponent(d.thumbnail)}" loading="lazy" onerror="this.outerHTML='🛒'">` : "🛒"}
+          ${d.thumbnail ? `<img src="${thumbSrc(d.thumbnail)}" loading="lazy" onerror="this.outerHTML='🛒'">` : "🛒"}
         </div>
         <div class="body-text">
           <div class="badge-row">

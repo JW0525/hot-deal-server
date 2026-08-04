@@ -131,9 +131,24 @@ function importFromSite(siteDir) {
   console.log(`[site] 이전 딜 ${deals.length}건을 불러왔습니다.`);
 }
 
+// 웹 화면(public/)도 같이 올린다. 그래야 Pages 주소 하나가
+// 사람이 보는 웹사이트이면서 동시에 미니앱이 읽는 데이터가 된다. 서버가 필요 없어진다.
+function copyWebsite(siteDir) {
+  const src = path.join(__dirname, "..", "public");
+  let copied = 0;
+  for (const name of fs.readdirSync(src)) {
+    const from = path.join(src, name);
+    if (!fs.statSync(from).isFile()) continue;
+    fs.copyFileSync(from, path.join(siteDir, name));
+    copied++;
+  }
+  console.log(`[site] 웹 화면 파일 ${copied}개 복사`);
+}
+
 async function build(siteDir) {
   const thumbDir = path.join(siteDir, THUMB_DIR_NAME);
   fs.mkdirSync(thumbDir, { recursive: true });
+  copyWebsite(siteDir);
 
   const deals = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
   const onDisk = new Set(fs.readdirSync(thumbDir));
