@@ -25,10 +25,27 @@ const fs = require("fs");
 const path = require("path");
 const https = require("https");
 const http = require("http");
+const crypto = require("crypto");
 
 const DATA_FILE = path.join(__dirname, "..", "data", "deals.json");
 const THUMB_DIR_NAME = "thumbs";
 const MAX_BYTES = 600 * 1024; // 이보다 크면 썸네일이 아니라 원본 사진이다. 앱에서 낭비.
+
+/**
+ * 같은 이미지가 이 개수 이상의 딜에 쓰이면 그 딜의 썸네일로 치지 않는다.
+ *
+ * 상품 사진은 글마다 다르다. 여러 글에 **바이트까지 똑같은 이미지**가 반복된다면
+ * 그건 그 딜의 사진이 아니라 원본 사이트가 "이미지 없음" 자리에 넣어둔 그림이거나
+ * 매번 같은 로고다. 앱에서는 회색 네모로 보여 목록이 지저분해진다.
+ *
+ * 2026-08-05 실측(썸네일 337장)에서 반복 그룹 5종 17장이 나왔고 전부 이 경우였다:
+ *   · 어미새 12×11 빈 GIF 8장   · 뽐뿌 60×50 회색 3장   · 어미새 188×189 회색 2장
+ *   · 이토랜드 SVG 2장(앱에서 깨져 보이던 것)   · 퀘이사존 네이버페이 로고 2장
+ *
+ * 2로 잡은 이유: 회색 그림이 딱 2번만 나온 경우가 있어 3으로 올리면 놓친다.
+ * 진짜 상품 사진이 두 글에 겹칠 수도 있지만, 그때 잃는 건 썸네일 두 장뿐이다.
+ */
+const PLACEHOLDER_MIN_DEALS = 2;
 
 const REFERER_BY_HOST = {
   ppomppu: "https://www.ppomppu.co.kr/",
@@ -160,6 +177,50 @@ function copyWebsite(siteDir) {
   console.log(`[site] 웹 화면 파일 ${copied}개 복사`);
 }
 
+/**
+ * 여러 딜에 똑같이 쓰인 이미지를 썸네일에서 빼낸다. 판정 기준은 `PLACEHOLDER_MIN_DEALS`.
+ *
+ * 내용(바이트)이 같은지로만 본다. 파일 이름은 딜 id라 전부 다르므로 이름으로는 못 찾는다.
+ * 찾은 딜은 `thumbnail`을 비우고 `keep`에서 빼서, 뒤따르는 정리 단계가 파일까지 지우게 한다.
+ *
+ * 지운 뒤 다음 회차에 같은 그림을 또 받게 되지만(크롤러가 원본 주소를 다시 준다)
+ * 매 회차 여기서 다시 걸러지므로 결과는 늘 같다. 몇 장 더 받는 값으로 상태를 안 들고 간다.
+ */
+function dropRepeatedThumbnails(deals, thumbDir, keep) {
+  const byHash = new Map(); // 이미지 해시 → 그 이미지를 쓰는 딜들
+
+  for (const deal of deals) {
+    if (!deal.thumbnail) continue;
+    const name = path.basename(deal.thumbnail);
+    const file = path.join(thumbDir, name);
+    if (!fs.existsSync(file)) continue;
+
+    const hash = crypto.createHash("sha1").update(fs.readFileSync(file)).digest("hex");
+    if (!byHash.has(hash)) byHash.set(hash, []);
+    byHash.get(hash).push({ deal, name });
+  }
+
+  let groups = 0;
+  let dropped = 0;
+  for (const [, users] of byHash) {
+    // 같은 딜이 여러 번 들어 있어도 한 장은 남겨야 하므로 딜 id 기준으로 센다.
+    const dealIds = new Set(users.map((u) => u.deal.id));
+    if (dealIds.size < PLACEHOLDER_MIN_DEALS) continue;
+
+    groups++;
+    for (const { deal, name } of users) {
+      deal.thumbnail = null;
+      keep.delete(name);
+      dropped++;
+    }
+    const sample = users[0].deal.source;
+    console.log(`[site] 반복 이미지 제외: ${sample} 등 ${dealIds.size}개 딜이 같은 그림 사용`);
+  }
+
+  console.log(`[site] 반복 이미지 ${groups}종 ${dropped}장을 썸네일에서 제외`);
+  return dropped;
+}
+
 async function build(siteDir) {
   const thumbDir = path.join(siteDir, THUMB_DIR_NAME);
   fs.mkdirSync(thumbDir, { recursive: true });
@@ -215,7 +276,10 @@ async function build(siteDir) {
     await sleep(120); // 상대 CDN을 몰아치지 않기 위한 최소 간격
   }
 
+  const placeholders = dropRepeatedThumbnails(deals, thumbDir, keep);
+
   // 목록에서 사라진 딜의 썸네일은 지운다. 안 지우면 폴더가 계속 불어난다.
+  // 바로 위에서 플레이스홀더로 판정된 파일도 keep에서 빠져 여기서 함께 지워진다.
   let removed = 0;
   for (const name of onDisk) {
     if (!keep.has(name)) {
