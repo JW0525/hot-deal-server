@@ -6,7 +6,7 @@
 ## 구조
 
 ```
-hotdeal-server/
+hot-deal-server/
   server.js        Express 서버 — **로컬 개발용** (정적 파일 서빙 + API + 썸네일 프록시)
   scheduler.js      매시 정각 크롤링 스케줄러 (node-cron) — 로컬에서만 씀
   db.js             JSON 파일 기반 저장소 (data/deals.json)
@@ -30,7 +30,7 @@ hotdeal-server/
 ## 로컬에서 실행하기
 
 ```bash
-cd hotdeal-server
+cd hot-deal-server
 npm install
 npm start
 ```

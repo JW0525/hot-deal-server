@@ -1,5 +1,5 @@
 {
-  "name": "hotdeal-server",
+  "name": "hot-deal-server",
   "version": "1.0.0",
   "description": "뽐뿌/클리앙/어미새/루리웹/딜바다/빠삭/이토랜드 핫딜을 1시간마다 수집해서 비교해주는 서버",
   "main": "server.js",

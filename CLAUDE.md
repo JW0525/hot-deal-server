@@ -16,7 +16,7 @@
 | 배포 주소 | https://hot-deal-eoo.pages.dev/deals.json (GitHub Pages) |
 | 옛 배포 주소 | ~~https://hotdealhunter.up.railway.app~~ — Railway 유료 전환으로 2026-08-04에 내림 |
 | 호스팅 | **상시 서버 없음.** GitHub Actions(수집) + GitHub Pages(게시) |
-| GitHub | `JW0525/hotdeal-server` (공개 저장소여야 Actions가 무료 무제한) |
+| GitHub | `JW0525/hot-deal-server` (공개 저장소여야 Actions가 무료 무제한) |
 | 런타임 | Node.js 20 이상 (**18은 크래시함 — 아래 트러블슈팅 참고**) |
 | 상태 | Pages 게시 확인 완료. **워크플로 파일 push만 남음** (토큰 `workflow` 권한 필요) |
 
@@ -61,7 +61,7 @@ force push → Pages가 서빙. **`server.js`는 이제 로컬 개발 전용이�
 ### 파일 구조
 
 ```
-hotdeal-server/
+hot-deal-server/
 ├── server.js           Express 앱, API 라우트, 썸네일 프록시
 ├── db.js               JSON 파일 저장소 (upsert/중복제거/만료정리)
 ├── scheduler.js        node-cron, 매시 정각 크롤링 ("0 * * * *")
