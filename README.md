@@ -1,6 +1,6 @@
 # 핫딜할인 서버
 
-뽐뿌 / 클리앙(알뜰구매) / 어미새 / 루리웹(핫딜예판) / 딜바다 / 빠삭 / 이토랜드 핫딜 게시판을 1시간마다
+뽐뿌 / 클리앙(알뜰구매) / 어미새 / 루리웹(핫딜예판) / 딜바다 / 빠삭 / 이토랜드 핫딜 게시판을 하루 두 번
 자동으로 수집해서 검색·필터·정렬로 비교해볼 수 있는 웹사이트입니다.
 
 ## 구조
@@ -11,7 +11,7 @@ hot-deal-server/
   scheduler.js      매시 정각 크롤링 스케줄러 (node-cron) — 로컬에서만 씀
   db.js             JSON 파일 기반 저장소 (data/deals.json)
   scripts/site.js   배포용 폴더 만들기 (딜 목록 + 썸네일 사본) — GitHub Actions가 씀
-  .github/workflows/crawl.yml  1시간마다 수집 → GitHub Pages 게시
+  .github/workflows/crawl.yml  하루 두 번 수집 → Cloudflare Pages 게시
   crawler/
     ppomppu.js       뽐뿌 파서
     clien.js         클리앙 파서
@@ -36,7 +36,7 @@ npm start
 ```
 
 브라우저에서 http://localhost:3000 접속. 서버가 켜지면 곧바로 1회 크롤링을 실행하고,
-이후 매시 정각(0 * * * *)에 자동으로 다시 수집합니다.
+이후 하루 두 번(`7 11,23 * * *` UTC = 한국 저녁 8시 7분·아침 8시 7분)에 자동으로 다시 수집합니다.
 
 수동으로 즉시 한 번 더 돌려보고 싶다면:
 
@@ -53,14 +53,17 @@ curl -X POST http://localhost:3000/api/crawl-now
 
 ## 배포 — 서버가 없습니다 (무료)
 
-**상시 켜두는 서버를 쓰지 않습니다.** GitHub Actions가 1시간마다 수집해서 결과를
-GitHub Pages에 올려두고, 미니앱은 그 정적 파일을 받아갑니다.
+**상시 켜두는 서버를 쓰지 않습니다.** GitHub Actions가 하루 두 번 수집해서 결과를
+**Cloudflare Pages**에 올려두고, 미니앱은 그 정적 파일을 받아갑니다.
+
+⚠️ **GitHub Pages 가 아닙니다.** GitHub Pages 는 약관상 상업적 이용이 막혀 있어
+Cloudflare Pages 로 옮겼습니다(2026-08 확인). 게시 주소는 `hot-deal-eoo.pages.dev` 입니다.
 
 ```
-GitHub Actions (매시 7분, 공개 저장소는 무료·무제한)
+GitHub Actions (하루 두 번 11:07·23:07 UTC, 공개 저장소는 무료·무제한)
   └ 크롤링 → 썸네일까지 내려받아 site/ 폴더 구성
       └ data 브랜치에 force push
-           └ GitHub Pages 가 그대로 서빙 (CDN·CORS 허용·잠들지 않음)
+           └ Cloudflare Pages 가 그대로 서빙 (CDN·CORS 허용·잠들지 않음)
                 └ https://hot-deal-eoo.pages.dev/deals.json
                    https://hot-deal-eoo.pages.dev/thumbs/*.jpg
 ```
@@ -73,7 +76,7 @@ GitHub Actions (매시 7분, 공개 저장소는 무료·무제한)
 | 시도한 것 | 왜 안 되나 |
 |---|---|
 | Railway | 무료 크레딧이 끝나면 요금이 붙음 |
-| Render 무료 | 계정당 무료 서비스 1개 · 15분이면 잠들어 매시 크롤링도 멈춤 |
+| Render 무료 | 계정당 무료 서비스 1개 · 15분이면 잠들어 주기 크롤링도 멈춤 |
 | Cloudflare Worker에서 크롤링 | 무료 플랜은 요청당 CPU 10ms. HTML 파싱은 그 수십 배가 듦 |
 | Cloudflare Worker에서 썸네일 프록시 | **Worker의 외부 요청에는 `Cf-Worker` 헤더가 강제로 붙는데(삭제 불가) 어미새·퀘이사존 CDN이 이걸 403으로 막음** |
 | 브라우저가 이미지 직접 요청 | 뽐뿌(302)·퀘이사존(403)이 외부 도메인 요청을 차단 |
